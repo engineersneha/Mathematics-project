@@ -24,13 +24,13 @@ class OdeIntegration:
         self.approach = approach
         self.params = params
 
-    def solve_ode(self):
-        if   self.backend.lower() == 'scipy_ode': self.scipy_solve_ode()
+    def solve(self):
+        if self.backend.lower() == 'scipy_ode': self.scipy_solve_ode()
         elif self.backend.lower() == 'scipy_odeint': self.scipy_solve_odeint()
         elif self.backend.lower() == 'scipy_solve_ivp': self.scipy_solve_ivp()
         else:
             raise ValueError(self.backend, 'not implemented.')
-        return self.t,self.sol
+        return self.t, self.sol
 
     def scipy_solve_ode(self):
         # Set integration method
