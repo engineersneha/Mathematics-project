@@ -6,34 +6,33 @@ from scipy.integrate import odeint
 from scipy import arange
 
 ''' Generate training data'''
-#Define equations for Lorenz system
-def lorenz(x, t):
+#Define equations for Rossler system
+def rossler(x, t):
     return [
-        10 * (x[1] - x[0]),
-        x[0] * (28 - x[2]) - x[1],
-        x[0] * x[1] - 8 / 3 * x[2],
+        -x[1] - x[2],
+        x[0] + 0.2*(x[1]),
+        0.2+ x[2] *(x[0]-5.7),
     ]
 #Intial conditions for x and t
-dt = 0.001
-t_train = np.arange(0, 100, dt)
-x0_train = [-8, 8, 27]
-#Collect time-series data from Lorenz system (X)
-x_train = odeint(lorenz, x0_train, t_train)
-print(x_train.shape)
+dt = 0.01
+t_train = np.arange(0, 25, dt)
+x0_train = [3,5,0]
+#Collect time-series data from Rossler system (X)
+x_train = odeint(rossler, x0_train, t_train)
 #Compute derivates of data collected (X')
 x_dot_train_measured = np.array(
-    [lorenz(x_train[i], 0) for i in range(t_train.size)]
+    [rossler(x_train[i], 0) for i in range(t_train.size)]
 )
 
 ''' Fit the models and simulate'''
 #Set parameters for SINDy object
-poly_order = 5
+poly_order = 2
 threshold = 0.05
-order = 2
+order = 1
 #Define some noise levels to introduce into data
 noise_levels = [1e-4, 1e-3, 1e-2, 1e-1, 1.0]
 models = []
-t_sim = np.arange(0, 20, dt)
+t_sim = np.arange(0, 25, dt)
 x_sim = []
 for eps in noise_levels:
     #Create SINDy object
@@ -45,7 +44,6 @@ for eps in noise_levels:
         #Constructs set of library functions and handles formation of Θ(X)
         feature_library=ps.PolynomialLibrary(degree=poly_order),
     )
-
     #Fit SINDy model to training data generated earlier
     model.fit(
         x_train,
@@ -54,6 +52,7 @@ for eps in noise_levels:
         + np.random.normal(scale=eps, size=x_train.shape),
         quiet=True,
     )
+    model.print()
     models.append(model)
     x_sim.append(model.simulate(x_train[0], t_sim))
 
@@ -117,10 +116,10 @@ plt.show()
 
 '''Assess results on a test trajectory'''
 #New initial conditions for x and t
-t_test = np.arange(0, 15, dt)
-x0_test = np.array([8, 7, 15])
+t_test = np.arange(0, 20, dt)
+x0_test = np.array([2, -5, 10])
 #Generate test data
-x_test = odeint(lorenz, x0_test, t_test)
+x_test = odeint(rossler, x0_test, t_test)
 # Compare SINDy-predicted derivatives with finite difference derivatives
 print('Model score: %f' % model.score(x_test, t=dt))
 # Predict derivatives using the learned model
